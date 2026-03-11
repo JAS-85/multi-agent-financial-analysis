@@ -1,0 +1,9 @@
+ollama>=0.4.0
+pdfplumber>=0.9.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+pandas>=2.0.0
+streamlit>=1.30.0
+yfinance>=0.2.0
+ddgs>=1.0.0
+# No additional packages needed for SEC EDGAR, RSS, or FRED — uses stdlib + requests + pandas
