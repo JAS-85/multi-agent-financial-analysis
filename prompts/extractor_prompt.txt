@@ -56,9 +56,33 @@ Required output format:
     "notes": "Overall observations — currency mix, data gaps, conflicting figures"
 }
 
+EXAMPLE — given this input snippet:
+
+Stock: Pfizer Inc (PFE)
+Currency: USD
+Current Price: 26.86
+Market Cap: 152,345,678,900
+Trailing P/E: 18.45
+Trailing EPS: 1.46
+Dividend Yield: 5.82%
+52-Week High: 31.54
+52-Week Low: 24.48
+Total Revenue: 58,496,000,000
+Net Income: 2,119,000,000
+Gross Margins: 69.18%
+Key Metrics JSON: {"ticker":"PFE","currency":"USD","current_price":26.86,"market_cap":152345678900,"trailing_pe":18.45,"trailing_eps":1.46,"dividend_yield":0.0582,"52w_high":31.54,"52w_low":24.48,"total_revenue":58496000000,"net_income":2119000000,"gross_margins":0.6918}
+
+Correct output:
+{"company_data":[{"company":"Pfizer Inc","ticker":"PFE","period":null,"currency":"USD","metrics":{"revenue":{"value":58496,"unit":"millions"},"net_income":{"value":2119,"unit":"millions"},"gross_margin":{"value":69.18,"unit":"%"},"eps":{"value":1.46,"unit":"per share"},"pe_ratio":{"value":18.45,"unit":"x"},"market_cap":{"value":152.3,"unit":"billions"},"current_price":{"value":26.86,"unit":"per share"},"52w_high":{"value":31.54,"unit":"per share"},"52w_low":{"value":24.48,"unit":"per share"},"dividend_yield":{"value":5.82,"unit":"%"}},"raw_figures":[],"notes":"All metrics from yfinance live data"}],"macro_data":[],"notes":"Single company, USD only"}
+
+END EXAMPLE
+
 Rules:
+- Copy values directly from Key Metrics JSON when available — it contains pre-structured data.
+- Convert: dividend_yield 0.0582 → 5.82%, gross_margins 0.6918 → 69.18%, revenue in raw number → millions, market_cap → billions.
 - Only extract figures explicitly stated in the text. Never calculate or infer.
 - If a field cannot be determined, use null.
 - One entry per company in company_data. One entry per macro indicator.
 - If no macro data is present, return an empty array for macro_data.
 - Always record the currency. Write "unknown" if unsure.
+- Do NOT produce generic summaries. Every value must come from the input text with a specific number.

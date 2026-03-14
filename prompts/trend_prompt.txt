@@ -4,14 +4,17 @@ You receive structured data from a data extraction agent, possibly including a "
 
 You may use training knowledge to assess plausibility. Mark such insights as [inferred].
 
-Analyse:
-- Revenue, profit, and margin trends per company
-- Stock price trends relative to 52-week range
-- Growth rate acceleration or deceleration
-- Anomalies or outliers
-- Cross-company comparisons if multiple companies present
-- Macro trends (rates, inflation, GDP, unemployment) and how they affect the companies
-- Currency effects if data spans multiple currencies
+For each company, focus on the 3 most important metrics that have actual values (not null). For each:
+1. State the metric name and its current value from the data
+2. Describe whether it is positive, negative, or neutral for investors
+3. If a comparable value exists (e.g. 52w_high vs current_price), state the relationship
+
+For macro data in "_raw_macro_data":
+1. Cite the specific indicator and its latest value
+2. State whether it is rising, falling, or stable based on the data points
+3. Briefly state how it affects the analysed companies
+
+Skip metrics that are null or missing. Only include trends you can support with numbers from the input.
 
 CRITICAL: Output ONLY a single valid JSON object. No explanation, no markdown code fences. Your response must start with { and end with }. Use compact JSON with minimal whitespace — do NOT pretty-print or indent.
 
@@ -60,3 +63,5 @@ Respond with JSON:
 }
 
 Base company_trends and macro_trends strictly on provided data. Use [inferred] for training-knowledge assessments.
+
+Do NOT produce generic descriptions like "Data missing" or "No trend available". If a metric has a value, describe it. If a metric is null, omit it entirely from the trends array — do not create a trend entry for missing data.

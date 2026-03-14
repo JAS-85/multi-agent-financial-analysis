@@ -17,7 +17,7 @@ class SentimentAnalyzerAgent(BaseAgent):
         super().__init__(
             model=SENTIMENT_ANALYZER_MODEL,
             system_prompt=system_prompt,
-            temperature=0.3,
+            temperature=0.25,
             agent_key="sentiment_analyzer",
         )
 

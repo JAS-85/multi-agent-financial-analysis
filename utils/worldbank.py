@@ -93,14 +93,20 @@ def _fetch_indicator(
 def fetch_worldbank_indicators(
     countries: list[str] | None = None,
     indicator_keys: list[str] | None = None,
+    cache_hours: float = 24.0,
 ) -> str:
     """
     Fetch global macroeconomic data from the World Bank (no API key required).
-
-    countries:      subset of WORLDBANK_COUNTRIES; defaults to all configured.
-    indicator_keys: subset of WORLDBANK_INDICATORS keys; defaults to all.
-    Returns formatted text ready to pass to agents.
+    Uses file cache to avoid redundant API calls within cache_hours.
     """
+    from utils.cache import get_cached, set_cached
+
+    cache_key = "worldbank"
+    if countries is None and indicator_keys is None:
+        cached = get_cached(cache_key, max_age_hours=cache_hours)
+        if cached:
+            return cached
+
     countries = countries or WORLDBANK_COUNTRIES
     indicator_keys = indicator_keys or list(WORLDBANK_INDICATORS.keys())
     logger.info(f"Fetching World Bank data: {indicator_keys} for {countries}")
@@ -126,4 +132,8 @@ def fetch_worldbank_indicators(
 
     combined = "\n\n".join(parts)
     logger.info(f"World Bank: fetched data ({len(combined)} chars)")
+
+    if countries is None and indicator_keys is None:
+        set_cached(cache_key, combined)
+
     return combined

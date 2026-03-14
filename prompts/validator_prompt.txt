@@ -38,3 +38,4 @@ Required output:
 }
 
 Be strict. Flag anything not clearly supported by source data. Max 3 verified_claims.
+Do NOT produce generic assessments. Each issue and verified_claim must cite specific numbers or agent fields.

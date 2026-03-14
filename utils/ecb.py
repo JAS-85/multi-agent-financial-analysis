@@ -105,13 +105,19 @@ def _parse_sdmx(data: dict, label: str, n: int) -> str | None:
         return None
 
 
-def fetch_ecb_indicators(series_keys: list[str] | None = None) -> str:
+def fetch_ecb_indicators(series_keys: list[str] | None = None, cache_hours: float = 24.0) -> str:
     """
     Fetch ECB macroeconomic indicators (no API key required).
-
-    series_keys: subset of ECB_SERIES keys to fetch; defaults to all.
-    Returns formatted text ready to pass to agents.
+    Uses file cache to avoid redundant API calls within cache_hours.
     """
+    from utils.cache import get_cached, set_cached
+
+    cache_key = "ecb"
+    if series_keys is None:
+        cached = get_cached(cache_key, max_age_hours=cache_hours)
+        if cached:
+            return cached
+
     keys = series_keys or list(ECB_SERIES.keys())
     logger.info(f"Fetching ECB data: {keys}")
 
@@ -129,4 +135,8 @@ def fetch_ecb_indicators(series_keys: list[str] | None = None) -> str:
 
     combined = "\n\n".join(parts)
     logger.info(f"ECB: fetched {len(parts) - 1} series ({len(combined)} chars)")
+
+    if series_keys is None:
+        set_cached(cache_key, combined)
+
     return combined

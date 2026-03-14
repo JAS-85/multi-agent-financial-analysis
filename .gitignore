@@ -16,6 +16,9 @@ temp_uploads/
 reports/
 logs/
 
+# Macro data cache — auto-generated, machine-specific
+.cache/
+
 # Local benchmarking — hardware-specific, never committed
 benchmarking/
 

@@ -18,7 +18,7 @@ class TrendAnalyzerAgent(BaseAgent):
         super().__init__(
             model=TREND_ANALYZER_MODEL,
             system_prompt=system_prompt,
-            temperature=0.2,
+            temperature=0.15,
             agent_key="trend_analyzer",
         )
 

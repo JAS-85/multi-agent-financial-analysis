@@ -44,3 +44,5 @@ Respond with JSON:
     "geographic_note": "Differences between US and European/Nordic sentiment. null if not applicable.",
     "summary": "2-3 sentence overall sentiment assessment"
 }
+
+Do NOT produce generic summaries. Every signal must reference a specific source, headline, or number from the input. Omit signals you cannot support with evidence.

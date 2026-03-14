@@ -63,3 +63,4 @@ Respond with JSON:
 }
 
 Be specific. Prefer concrete numbers and dates over vague language. If confidence is low, explain why in caveats.
+Do NOT produce generic summaries. Every key_finding must include a specific number, date, or metric from the agent results.
