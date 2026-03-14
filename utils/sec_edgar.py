@@ -1,4 +1,5 @@
 import logging
+import time
 
 import requests
 
@@ -9,28 +10,55 @@ logger = logging.getLogger(__name__)
 
 _HEADERS = {"User-Agent": SEC_USER_AGENT, "Accept": "application/json"}
 _TICKER_CIK_URL = "https://www.sec.gov/files/company_tickers.json"
+_EFTS_URL = "https://efts.sec.gov/LATEST/search-index?q=%22{ticker}%22&forms=10-K,10-Q"
 _SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik}.json"
 _FILING_BASE = "https://www.sec.gov/Archives/edgar/data/{cik}/{accession_no_dashes}/{primary_doc}"
 
+# EDGAR rate limit: max 10 req/s; 0.5s delay keeps us well within limits
+_REQUEST_DELAY = 0.5
+
 
 def _get_cik(ticker: str) -> str | None:
-    """Look up the SEC CIK number for a ticker symbol."""
+    """Look up the SEC CIK number for a ticker symbol.
+    Tries company_tickers.json first; falls back to EFTS full-text search if blocked.
+    """
+    ticker_upper = ticker.upper()
+
+    # Primary: bulk ticker → CIK map
     try:
+        time.sleep(_REQUEST_DELAY)
         r = requests.get(_TICKER_CIK_URL, headers=_HEADERS, timeout=15)
         r.raise_for_status()
         data = r.json()
-        ticker_upper = ticker.upper()
         for entry in data.values():
             if entry.get("ticker", "").upper() == ticker_upper:
                 return str(entry["cik_str"]).zfill(10)
+        logger.warning(f"Ticker {ticker} not found in company_tickers.json")
     except Exception as e:
-        logger.error(f"CIK lookup failed for {ticker}: {e}")
+        logger.warning(f"company_tickers.json failed for {ticker}: {e} — trying EFTS fallback")
+
+    # Fallback: EDGAR full-text search API
+    try:
+        time.sleep(_REQUEST_DELAY)
+        url = _EFTS_URL.format(ticker=ticker_upper)
+        r = requests.get(url, headers=_HEADERS, timeout=15)
+        r.raise_for_status()
+        hits = r.json().get("hits", {}).get("hits", [])
+        for hit in hits:
+            src = hit.get("_source", {})
+            entity_id = src.get("entity_id", "")
+            if entity_id:
+                return str(entity_id).zfill(10)
+    except Exception as e:
+        logger.error(f"EFTS CIK lookup failed for {ticker}: {e}")
+
     return None
 
 
 def _get_recent_filings(cik: str, forms: tuple = ("10-K", "10-Q")) -> list[dict]:
     """Return metadata for recent filings of the given types."""
     try:
+        time.sleep(_REQUEST_DELAY)
         url = _SUBMISSIONS_URL.format(cik=cik)
         r = requests.get(url, headers=_HEADERS, timeout=15)
         r.raise_for_status()
@@ -55,15 +83,77 @@ def _get_recent_filings(cik: str, forms: tuple = ("10-K", "10-Q")) -> list[dict]
         return []
 
 
+_FINANCIAL_KEYWORDS = (
+    "total revenue", "net revenue", "net sales", "net income",
+    "earnings per share", "diluted eps", "gross profit",
+    "operating income", "total assets", "total liabilities",
+    "stockholders' equity", "cash and cash equivalents",
+    "cost of revenue", "gross margin", "operating expenses",
+    "income from operations", "revenue", "net earnings",
+)
+
+
+def _extract_financial_sections(full_text: str, max_chars: int) -> str:
+    """Extract text around financial keywords instead of taking the first N chars.
+
+    Searches for sections containing financial data and returns windows around
+    those positions, merged to avoid overlaps.
+    """
+    lower = full_text.lower()
+
+    # Collect hit positions
+    hits = set()
+    for kw in _FINANCIAL_KEYWORDS:
+        pos = lower.find(kw)
+        while pos != -1:
+            hits.add(pos)
+            pos = lower.find(kw, pos + len(kw))
+
+    if not hits:
+        return full_text[:max_chars]
+
+    # Build windows around each hit
+    window = 400
+    ranges = sorted(
+        (max(0, p - window), min(len(full_text), p + window)) for p in hits
+    )
+
+    # Merge overlapping ranges
+    merged = [list(ranges[0])]
+    for start, end in ranges[1:]:
+        if start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+
+    # Extract sections within budget
+    sections = []
+    used = 0
+    for start, end in merged:
+        chunk = full_text[start:end].strip()
+        if not chunk:
+            continue
+        if used + len(chunk) > max_chars:
+            remaining = max_chars - used
+            if remaining > 200:
+                sections.append(chunk[:remaining])
+            break
+        sections.append(chunk)
+        used += len(chunk)
+
+    return "\n[...]\n".join(sections) if sections else full_text[:max_chars]
+
+
 def _fetch_filing_text(cik: str, accession: str, doc: str) -> str:
     """Fetch and extract text from a specific SEC filing document."""
+    time.sleep(_REQUEST_DELAY)
     acc_no_dashes = accession.replace("-", "")
     url = _FILING_BASE.format(cik=cik.lstrip("0"), accession_no_dashes=acc_no_dashes, primary_doc=doc)
     try:
         r = requests.get(url, headers={**_HEADERS, "Accept": "text/html"}, timeout=20)
         r.raise_for_status()
         text = extract_text_from_html(r.text)
-        return text[:SEC_MAX_CHARS]
+        return _extract_financial_sections(text, SEC_MAX_CHARS)
     except Exception as e:
         logger.warning(f"Could not fetch filing document {url}: {e}")
         return ""

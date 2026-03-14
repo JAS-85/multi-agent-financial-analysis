@@ -16,6 +16,9 @@ temp_uploads/
 reports/
 logs/
 
+# Local benchmarking — hardware-specific, never committed
+benchmarking/
+
 # Internal documentation — owner decides what to publish
 docs/
 

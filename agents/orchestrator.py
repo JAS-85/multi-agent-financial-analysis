@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 
 from agents.base_agent import BaseAgent
-from config.config import ORCHESTRATOR_MODEL
+from config.config import ORCHESTRATOR_MODEL, KEEP_ALIVE_ORCHESTRATOR
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,7 @@ class OrchestratorAgent(BaseAgent):
             system_prompt=system_prompt,
             temperature=0.3,
             agent_key="orchestrator",
+            keep_alive=KEEP_ALIVE_ORCHESTRATOR,
         )
 
     def plan(self, query: str, available_data: dict) -> dict:

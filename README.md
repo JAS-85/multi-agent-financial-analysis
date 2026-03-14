@@ -15,7 +15,7 @@ A local, privacy-preserving system for financial analysis using multiple special
 - Python 3.10+
 - [Ollama](https://ollama.ai) installed and running
 - 16 GB RAM
-- ~8 GB storage for models
+- ~12 GB storage for models
 
 ## Installation
 
@@ -26,6 +26,7 @@ venv\Scripts\activate       # Windows
 
 pip install -r requirements.txt
 
+ollama pull llama3.1:8b
 ollama pull mistral:7b
 ollama pull phi3:mini
 ```
@@ -47,19 +48,23 @@ python main.py "Outlook for Pfizer" --tickers PFE
 # Web search + news + SEC filings + macro data
 python main.py "Pfizer 2025 outlook" --tickers PFE --search --news --sec --macro
 
+# Extended context (16k windows — use when 8-10 GB RAM is free)
+python main.py "Pfizer 2025 outlook" --tickers PFE --news --sec --extended-ctx
+
 # Analyze a document
 python main.py "Summarize key financials" report.pdf
 ```
 
-### Data source flags
+### Flags
 
-| Flag | Source |
-|------|--------|
+| Flag | Description |
+|------|-------------|
 | `--tickers` | Live stock prices via Yahoo Finance |
 | `--search` | Web search (DuckDuckGo) |
 | `--news` | RSS: Yahoo Finance, Reuters, MarketWatch, Motley Fool |
 | `--sec` | SEC EDGAR 10-K / 10-Q filings |
 | `--macro` | FRED: GDP, CPI, Fed Funds Rate, unemployment, S&P 500 |
+| `--extended-ctx` | 16k/8k context windows instead of 8k/4k |
 
 All sources are free and require no API keys.
 
