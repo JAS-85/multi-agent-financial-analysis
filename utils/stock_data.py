@@ -98,10 +98,6 @@ def fetch_stock_data(ticker: str, period: str = "1y") -> dict:
         return {"error": str(e), "ticker": ticker}
 
 
-def fetch_multiple_stocks(tickers: list[str], period: str = "1y") -> list[dict]:
-    """Fetch data for multiple tickers."""
-    return [fetch_stock_data(t, period) for t in tickers]
-
 
 def format_stock_summary(data: dict) -> str:
     """Format stock data as readable text for agent consumption.

@@ -26,19 +26,6 @@ def fetch_url(url: str, timeout: int = DEFAULT_TIMEOUT) -> str:
     return response.text
 
 
-def fetch_multiple(urls: list[str], timeout: int = DEFAULT_TIMEOUT) -> list[dict]:
-    """Fetch multiple URLs. Returns list of results with status for each."""
-    results = []
-    for url in urls:
-        try:
-            content = fetch_url(url, timeout)
-            results.append({"url": url, "status": "success", "content": content})
-            logger.info(f"Fetched: {url} ({len(content)} chars)")
-        except requests.RequestException as e:
-            logger.error(f"Failed to fetch {url}: {e}")
-            results.append({"url": url, "status": "error", "error": str(e)})
-    return results
-
 
 def extract_text_from_html(html: str) -> str:
     """Basic text extraction from HTML — strips tags and excess whitespace."""

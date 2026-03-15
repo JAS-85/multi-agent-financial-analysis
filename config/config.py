@@ -1,20 +1,3 @@
-# Exchange suffixes for yfinance (display name -> ticker suffix)
-# Empty string = no suffix (US exchanges). Used by the UI dropdown.
-EXCHANGE_SUFFIXES = {
-    "NYSE / NASDAQ (US)":         "",
-    "Nasdaq Stockholm (SE)":      ".ST",
-    "Nasdaq Helsinki (FI)":       ".HE",
-    "Nasdaq Copenhagen (DK)":     ".CO",
-    "Oslo Bors (NO)":             ".OL",
-    "XETRA Frankfurt (DE)":       ".DE",
-    "London Stock Exchange (UK)": ".L",
-    "Euronext Paris (FR)":        ".PA",
-    "Euronext Amsterdam (NL)":    ".AS",
-    "Euronext Milan (IT)":        ".MI",
-    "Bolsa Madrid (ES)":          ".MC",
-    "SIX Swiss Exchange (CH)":    ".SW",
-}
-
 # Model assignments
 ORCHESTRATOR_MODEL = "llama3.1:8b"
 DATA_EXTRACTOR_MODEL = "phi3:mini"
