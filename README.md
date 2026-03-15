@@ -134,6 +134,10 @@ python -m pytest tests/ -v
 
 40 tests covering agents, JSON repair pipeline, cache, utilities, and end-to-end workflows. All mocked — no Ollama required.
 
+## Disclaimer
+
+This tool is for educational and research purposes only. It does not constitute financial advice. The authors are not responsible for any investment decisions made based on the output of this system. Always consult a qualified financial advisor before making investment decisions.
+
 ## License
 
 MIT
