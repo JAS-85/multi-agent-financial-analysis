@@ -6,7 +6,7 @@ A local, privacy-preserving system for financial analysis using multiple special
 
 - **Five specialized agents** — orchestrator, data extractor, trend analyzer, sentiment analyzer, validator
 - **Multiple data sources** — documents, live stock data, web search, news feeds, SEC filings, macroeconomic indicators from US, EU and Sweden
-- **Robust JSON pipeline** — 4-step recovery handles trailing commas, unescaped chars, prettified output, and truncated responses
+- **Robust JSON pipeline** — 5-step recovery handles whitespace compaction, trailing commas, unescaped chars, prettified output, and truncated responses
 - **Web UI** — Streamlit interface for interactive use
 - **CLI** — scriptable from the command line
 - **Privacy-first** — no data leaves your machine; LLM inference is entirely local
@@ -133,6 +133,8 @@ python -m pytest tests/ -v
 ```
 
 40 tests covering agents, JSON repair pipeline, cache, utilities, and end-to-end workflows. All mocked — no Ollama required.
+
+Failed LLM responses are saved to `logs/` for post-mortem analysis.
 
 ## Disclaimer
 

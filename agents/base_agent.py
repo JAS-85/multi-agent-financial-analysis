@@ -123,19 +123,42 @@ class BaseAgent:
                 except json.JSONDecodeError as e:
                     logger.debug(f"[{self.__class__.__name__}] String-escape fix failed at pos {e.pos}: {e.msg}")
 
-        # Attempt 4: repair truncated JSON (output may have hit num_predict limit)
-        repaired = self._repair_truncated_json(text[start:])
-        if repaired is not None:
-            logger.info(f"[{self.__class__.__name__}] Recovered truncated JSON via repair")
-            return repaired
+        # Attempt 4: repair truncated JSON (try compacted version first)
+        for label, source in [("compacted", compacted if end > start else text[start:]),
+                              ("original", text[start:])]:
+            repaired = self._repair_truncated_json(source)
+            if repaired is not None:
+                logger.info(f"[{self.__class__.__name__}] Recovered truncated JSON via repair ({label})")
+                return repaired
+            logger.debug(f"[{self.__class__.__name__}] Repair failed on {label} ({len(source)} chars)")
 
-        # Log diagnostic info for debugging
-        snippet = text[start:start+200].replace('\n', '\\n')
+        # Log diagnostic info — include last 200 chars to show truncation point
+        snippet_start = text[start:start+200].replace('\n', '\\n')
+        snippet_end = text[max(start, len(text)-200):].replace('\n', '\\n')
         logger.warning(
             f"[{self.__class__.__name__}] All JSON parse attempts failed. "
-            f"Response length: {len(raw)} chars. First 200: {snippet}"
+            f"Response length: {len(raw)} chars. First 200: {snippet_start} | Last 200: {snippet_end}"
         )
+
+        # Save full raw response to file for post-mortem analysis
+        self._save_failed_response(raw)
+
         return {"raw_response": raw}
+
+    def _save_failed_response(self, raw: str) -> None:
+        """Save raw response to logs/ when JSON parsing fails, for post-mortem."""
+        try:
+            from pathlib import Path
+            from datetime import datetime
+            logs_dir = Path("logs")
+            logs_dir.mkdir(exist_ok=True)
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            name = self.__class__.__name__
+            path = logs_dir / f"parse_fail_{name}_{ts}.txt"
+            path.write_text(raw, encoding="utf-8")
+            logger.info(f"[{name}] Saved failed response to {path}")
+        except Exception as e:
+            logger.debug(f"Could not save failed response: {e}")
 
     @staticmethod
     def _compact_json_whitespace(text: str) -> str:
