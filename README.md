@@ -34,7 +34,7 @@ Agents run sequentially (one model loaded at a time) to fit in 16 GB RAM.
 
 - Python 3.10+
 - [Ollama](https://ollama.ai) installed and running
-- 16 GB RAM
+- 8 GB RAM minimum (standard context), 16 GB recommended (extended context)
 - ~12 GB storage for models
 
 ## Installation
