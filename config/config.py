@@ -84,10 +84,12 @@ CONTEXT_LENGTH_EXTENDED = {
 WEB_SEARCH_MAX_RESULTS = 5      # Number of search results to fetch
 WEB_SEARCH_MAX_CHARS = 2000     # Max characters to extract per page
 
+# Shared User-Agent for all external API requests (FRED, ECB, Riksbanken, World Bank, SEC).
+# SEC EDGAR requires: "Company Name contact@domain.com" — update before use.
+DEFAULT_USER_AGENT = "FinancialAnalysisSystem/1.0 contact@example.com"
+
 # SEC EDGAR settings (no API key required)
-# EDGAR requires: "Company Name contact@domain.com" — localhost is blocked by EDGAR.
-# Update this to a real-looking email if you keep getting 403 errors.
-SEC_USER_AGENT = "FinancialAnalysisSystem/1.0 contact@example.com"
+SEC_USER_AGENT = DEFAULT_USER_AGENT
 SEC_MAX_RESULTS = 3             # Number of filings to fetch
 SEC_MAX_CHARS = 4000            # Max characters to extract per filing
 

@@ -3,11 +3,11 @@ import xml.etree.ElementTree as ET
 
 import requests
 
-from config.config import RSS_MAX_ITEMS, RSS_MAX_CHARS, RSS_FEEDS
+from config.config import DEFAULT_USER_AGENT, RSS_MAX_ITEMS, RSS_MAX_CHARS, RSS_FEEDS
 
 logger = logging.getLogger(__name__)
 
-_HEADERS = {"User-Agent": "FinancialAnalysisSystem/1.0 research@localhost"}
+_HEADERS = {"User-Agent": DEFAULT_USER_AGENT}
 _YAHOO_RSS = "https://finance.yahoo.com/rss/headline?s={ticker}"
 
 # XML namespaces used in RSS/Atom feeds

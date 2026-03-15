@@ -10,6 +10,7 @@ import time
 import requests
 
 from config.config import (
+    DEFAULT_USER_AGENT,
     WORLDBANK_BASE_URL,
     WORLDBANK_COUNTRIES,
     WORLDBANK_INDICATORS,
@@ -19,7 +20,7 @@ from config.config import (
 
 logger = logging.getLogger(__name__)
 
-_HEADERS = {"User-Agent": "FinancialAnalysisSystem/1.0 contact@example.com"}
+_HEADERS = {"User-Agent": DEFAULT_USER_AGENT}
 
 # Human-readable country names for display
 _COUNTRY_NAMES = {

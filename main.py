@@ -124,13 +124,15 @@ class FinancialAnalysisSystem:
     def _input_budget_chars(self, agent_key: str) -> int:
         """Max input characters for an agent based on its context window.
 
-        Reserves tokens for: system prompt (~600), output (2048), overhead (~200).
+        Reserves tokens for: system prompt (~800 for extractor with few-shot),
+        output (num_predict = 60% of num_ctx), overhead (~200).
         Uses ~4 chars/token as a conservative estimate.
         """
         agent = self.agents.get(agent_key)
         if not agent:
             return 8000
-        reserved_tokens = 600 + 2048 + 200
+        num_predict = max(1536, min(agent.num_ctx * 3 // 5, 4096))
+        reserved_tokens = 800 + num_predict + 200
         available_tokens = max(agent.num_ctx - reserved_tokens, 512)
         return available_tokens * 4  # ~4 chars per token
 
@@ -447,14 +449,27 @@ class FinancialAnalysisSystem:
 
             elif agent_name == "trend_analyzer":
                 extracted = prior_results.get("data_extractor", {})
+                extraction_failed = extracted.get("_extraction_failed", False)
+
                 # Attach raw macro data so trend_analyzer can see numbers directly
                 macro_text = data_blocks.get("macro", "")
                 budget = self._input_budget_chars("trend_analyzer")
                 if macro_text:
-                    # Truncate macro to 1/3 of budget, leave rest for structured data
                     macro_truncated = truncate_text(macro_text, budget // 3)
                     extracted = {**extracted, "_raw_macro_data": macro_truncated}
-                return agent.analyze(extracted, agent_instruction)
+
+                # If extraction failed, instruct trend_analyzer to only analyse macro data
+                trend_instruction = agent_instruction
+                if extraction_failed:
+                    logger.warning("Extraction failed — trend_analyzer will skip company_trends")
+                    trend_instruction = (
+                        "IMPORTANT: The data extractor failed. There is NO reliable company data. "
+                        "Set company_trends to an empty array []. "
+                        "Only analyse macro_trends from _raw_macro_data if available. "
+                        "Do NOT invent or estimate any company metrics."
+                    )
+
+                return agent.analyze(extracted, trend_instruction)
 
             elif agent_name == "sentiment_analyzer":
                 budget = self._input_budget_chars("sentiment_analyzer")

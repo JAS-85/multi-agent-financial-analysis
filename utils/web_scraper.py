@@ -3,11 +3,13 @@ from urllib.parse import urlparse
 
 import requests
 
+from config.config import DEFAULT_USER_AGENT
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 15
 DEFAULT_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; FinancialAnalysisBot/1.0)"
+    "User-Agent": DEFAULT_USER_AGENT
 }
 
 

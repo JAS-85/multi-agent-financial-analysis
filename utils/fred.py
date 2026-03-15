@@ -5,12 +5,12 @@ from io import StringIO
 import pandas as pd
 import requests
 
-from config.config import FRED_SERIES, FRED_TIMEOUT, FRED_RETRIES
+from config.config import DEFAULT_USER_AGENT, FRED_SERIES, FRED_TIMEOUT, FRED_RETRIES
 
 logger = logging.getLogger(__name__)
 
 _FRED_CSV_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
-_HEADERS = {"User-Agent": "FinancialAnalysisSystem/1.0 contact@example.com"}
+_HEADERS = {"User-Agent": DEFAULT_USER_AGENT}
 
 
 def _fetch_series(series_id: str, label: str, n_latest: int = 4) -> str | None:

@@ -11,6 +11,7 @@ from datetime import date, timedelta
 import requests
 
 from config.config import (
+    DEFAULT_USER_AGENT,
     RIKSBANK_BASE_URL,
     RIKSBANK_SERIES,
     RIKSBANK_TIMEOUT,
@@ -19,7 +20,7 @@ from config.config import (
 
 logger = logging.getLogger(__name__)
 
-_HEADERS = {"User-Agent": "FinancialAnalysisSystem/1.0 contact@example.com"}
+_HEADERS = {"User-Agent": DEFAULT_USER_AGENT}
 
 
 def _fetch_series(series_id: str, label: str, n_latest: int = 5) -> str | None:

@@ -63,10 +63,21 @@ python main.py "Summarize key financials" report.pdf
 | `--search` | Web search (DuckDuckGo) |
 | `--news` | RSS: Yahoo Finance, Reuters, MarketWatch, Motley Fool |
 | `--sec` | SEC EDGAR 10-K / 10-Q filings |
-| `--macro` | FRED: GDP, CPI, Fed Funds Rate, unemployment, S&P 500 |
+| `--macro` | FRED, ECB, Riksbanken, World Bank macro indicators |
 | `--extended-ctx` | 16k/8k context windows instead of 8k/4k |
 
-All sources are free and require no API keys.
+All data sources are free and require no API keys.
+
+### Macro data sources (`--macro`)
+
+| Source | Coverage |
+|--------|----------|
+| FRED | US GDP, CPI, Fed Funds Rate, unemployment, S&P 500, inflation expectations |
+| ECB | Eurozone HICP inflation, EUR/USD/SEK/GBP rates, refinancing & deposit facility rates |
+| Riksbanken | Swedish repo rate, USD/SEK, EUR/SEK |
+| World Bank | GDP growth, CPI inflation, unemployment for SE, US, DE, FR, GB, EU |
+
+Macro data is cached locally for 24 hours to avoid redundant API calls.
 
 ## Testing
 

@@ -36,9 +36,10 @@ class BaseAgent:
 
         messages.append({"role": "user", "content": user_prompt})
 
-        # Default num_predict: half of context window, clamped to [1024, 4096]
+        # Default num_predict: 60% of context window, clamped to [1536, 4096]
+        # Previous 50% / min 1024 caused truncation on prettified extractor output
         if num_predict is None:
-            num_predict = max(1024, min(self.num_ctx // 2, 4096))
+            num_predict = max(1536, min(self.num_ctx * 3 // 5, 4096))
 
         logger.info(f"[{self.__class__.__name__}] Calling model {self.model} (num_predict={num_predict}, num_ctx={self.num_ctx})")
 
@@ -97,14 +98,18 @@ class BaseAgent:
         if end > start:
             candidate = text[start:end]
 
-            # Attempt 1: direct parse
-            try:
-                return json.loads(candidate)
-            except json.JSONDecodeError as e:
-                logger.debug(f"[{self.__class__.__name__}] Direct parse failed at pos {e.pos}: {e.msg}")
+            # Attempt 0: compact whitespace (models often pretty-print despite instructions)
+            compacted = self._compact_json_whitespace(candidate)
+
+            # Attempt 1: direct parse (try compacted first, then original)
+            for variant in (compacted, candidate) if compacted != candidate else (candidate,):
+                try:
+                    return json.loads(variant)
+                except json.JSONDecodeError as e:
+                    logger.debug(f"[{self.__class__.__name__}] Direct parse failed at pos {e.pos}: {e.msg}")
 
             # Attempt 2: strip trailing commas before } and ]
-            cleaned = re.sub(r',\s*([}\]])', r'\1', candidate)
+            cleaned = re.sub(r',\s*([}\]])', r'\1', compacted)
             try:
                 return json.loads(cleaned)
             except json.JSONDecodeError as e:
@@ -131,6 +136,37 @@ class BaseAgent:
             f"Response length: {len(raw)} chars. First 200: {snippet}"
         )
         return {"raw_response": raw}
+
+    @staticmethod
+    def _compact_json_whitespace(text: str) -> str:
+        """Remove indentation and newlines outside of JSON string values.
+
+        Models often pretty-print JSON despite being told not to. This wastes
+        tokens and can cause truncation. Compacting before parsing recovers
+        otherwise valid but truncated pretty-printed JSON.
+        """
+        result = []
+        in_string = False
+        i = 0
+        while i < len(text):
+            ch = text[i]
+            if ch == '\\' and in_string and i + 1 < len(text):
+                result.append(ch)
+                result.append(text[i + 1])
+                i += 2
+                continue
+            if ch == '"':
+                in_string = not in_string
+                result.append(ch)
+            elif in_string:
+                result.append(ch)
+            elif ch in ' \t\n\r':
+                # Skip whitespace outside strings
+                pass
+            else:
+                result.append(ch)
+            i += 1
+        return ''.join(result)
 
     @staticmethod
     def _fix_string_escapes(text: str) -> str:
