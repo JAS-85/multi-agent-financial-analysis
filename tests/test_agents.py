@@ -30,6 +30,15 @@ class TestBaseAgent:
 
         assert result == {"key": "value"}
 
+    def test_parse_markdown_fenced_json(self, mock_ollama):
+        raw = '```json\n{"key": "value"}\n```'
+        mock_ollama.return_value = make_ollama_response(raw)
+
+        agent = BaseAgent(model="test", system_prompt="test")
+        result = agent.run("test prompt")
+
+        assert result == {"key": "value"}
+
     def test_parse_non_json_falls_back(self, mock_ollama):
         mock_ollama.return_value = make_ollama_response("Just plain text, no JSON here.")
 
@@ -57,6 +66,66 @@ class TestBaseAgent:
         with pytest.raises(ConnectionError):
             agent.run("test")
 
+    def test_num_predict_defaults(self, mock_ollama):
+        """num_predict should be 60% of num_ctx, clamped to [1536, 4096]."""
+        mock_ollama.return_value = make_ollama_response({"ok": True})
+
+        agent = BaseAgent(model="test", system_prompt="test", agent_key="data_extractor")
+        agent.run("test")
+
+        options = mock_ollama.call_args.kwargs["options"]
+        # data_extractor has 4096 ctx → 60% = 2457
+        assert options["num_predict"] == max(1536, min(4096 * 3 // 5, 4096))
+
+
+class TestJsonRepair:
+    """Tests for the JSON recovery pipeline in BaseAgent._parse_response."""
+
+    def _parse(self, raw: str) -> dict:
+        agent = BaseAgent(model="test", system_prompt="test")
+        return agent._parse_response(raw)
+
+    def test_trailing_comma_cleanup(self):
+        raw = '{"a": 1, "b": 2,}'
+        result = self._parse(raw)
+        assert result == {"a": 1, "b": 2}
+
+    def test_trailing_comma_in_array(self):
+        raw = '{"items": [1, 2, 3,]}'
+        result = self._parse(raw)
+        assert result == {"items": [1, 2, 3]}
+
+    def test_unescaped_newline_in_string(self):
+        raw = '{"note": "line one\nline two"}'
+        result = self._parse(raw)
+        assert result["note"] == "line one\nline two"
+
+    def test_truncated_json_closes_brackets(self):
+        # Truncation after a comma — the repair should close all open brackets
+        raw = '{"company_data": [{"company": "Acme", "metrics": {"revenue": 100},'
+        result = self._parse(raw)
+        assert result["company_data"][0]["company"] == "Acme"
+        assert result["company_data"][0]["metrics"]["revenue"] == 100
+
+    def test_truncated_json_after_comma(self):
+        raw = '{"a": 1, "b": 2, "c":'
+        result = self._parse(raw)
+        assert result["a"] == 1
+        assert result["b"] == 2
+
+    def test_compact_whitespace_preserves_strings(self):
+        pretty = '{\n    "name": "hello world",\n    "value": 42\n}'
+        result = BaseAgent._compact_json_whitespace(pretty)
+        parsed = json.loads(result)
+        assert parsed["name"] == "hello world"
+        assert parsed["value"] == 42
+
+    def test_compact_whitespace_preserves_escaped_quotes(self):
+        raw = '{"text": "he said \\"hello\\"", "n": 1}'
+        result = BaseAgent._compact_json_whitespace(raw)
+        parsed = json.loads(result)
+        assert "hello" in parsed["text"]
+
 
 class TestDataExtractor:
     def test_extract_returns_structured_data(self, mock_ollama, sample_extracted_data):
@@ -65,8 +134,9 @@ class TestDataExtractor:
         agent = DataExtractorAgent()
         result = agent.extract("Some financial text")
 
-        assert result["company"] == "Acme Corp"
-        assert result["metrics"]["revenue"]["value"] == 5200000
+        assert len(result["company_data"]) == 1
+        assert result["company_data"][0]["company"] == "Acme Corp"
+        assert result["company_data"][0]["metrics"]["revenue"]["value"] == 5200
 
     def test_extract_with_instructions(self, mock_ollama, sample_extracted_data):
         mock_ollama.return_value = make_ollama_response(sample_extracted_data)
@@ -85,8 +155,9 @@ class TestTrendAnalyzer:
         agent = TrendAnalyzerAgent()
         result = agent.analyze({"revenue": 5200000})
 
-        assert len(result["trends"]) == 1
-        assert result["trends"][0]["direction"] == "increasing"
+        assert len(result["company_trends"]) == 1
+        assert result["company_trends"][0]["trends"][0]["direction"] == "increasing"
+        assert result["outlook"]["key_risks"][0] == "Rising costs"
 
 
 class TestSentimentAnalyzer:
@@ -97,6 +168,7 @@ class TestSentimentAnalyzer:
         result = agent.analyze("Company X had a great quarter.")
 
         assert result["overall_sentiment"] == "bullish"
+        assert len(result["company_sentiment"]) == 1
         assert len(result["positive_signals"]) > 0
 
 
@@ -108,7 +180,7 @@ class TestValidator:
         result = agent.validate({"data_extractor": {}, "trend_analyzer": {}})
 
         assert result["is_consistent"] is True
-        assert len(result["issues"]) == 0
+        assert result["verified_claims"][0]["confidence"] == 0.9
 
 
 class TestOrchestrator:

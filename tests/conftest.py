@@ -20,60 +20,115 @@ def mock_ollama():
 
 @pytest.fixture
 def sample_extracted_data():
+    """Matches current extractor prompt schema."""
     return {
-        "company": "Acme Corp",
-        "period": "Q4 2024",
-        "metrics": {
-            "revenue": {"value": 5200000, "unit": "USD", "period": "Q4 2024"},
-            "net_income": {"value": 780000, "unit": "USD", "period": "Q4 2024"},
-            "eps": {"value": 2.15, "unit": "USD", "period": "Q4 2024"},
-            "growth_rates": {"revenue_yoy": "12%"},
-        },
-        "raw_figures": [
-            {"label": "Total Revenue", "value": "5,200,000", "context": "Q4 2024 earnings"},
+        "company_data": [
+            {
+                "company": "Acme Corp",
+                "ticker": "ACME",
+                "period": "Q4 2024",
+                "currency": "USD",
+                "metrics": {
+                    "revenue": {"value": 5200, "unit": "millions"},
+                    "net_income": {"value": 780, "unit": "millions"},
+                    "gross_margin": {"value": 45.2, "unit": "%"},
+                    "eps": {"value": 2.15, "unit": "per share"},
+                    "pe_ratio": {"value": 22.3, "unit": "x"},
+                    "market_cap": {"value": 8.5, "unit": "billions"},
+                    "current_price": {"value": 47.50, "unit": "per share"},
+                    "52w_high": {"value": 55.00, "unit": "per share"},
+                    "52w_low": {"value": 38.20, "unit": "per share"},
+                    "dividend_yield": {"value": 1.8, "unit": "%"},
+                },
+                "raw_figures": [],
+                "notes": "All metrics from yfinance live data",
+            }
         ],
-        "notes": "Strong quarter driven by product expansion.",
+        "macro_data": [],
+        "notes": "Single company, USD only",
     }
 
 
 @pytest.fixture
 def sample_trend_data():
+    """Matches current trend prompt schema."""
     return {
-        "trends": [
+        "company_trends": [
             {
-                "metric": "Revenue",
-                "direction": "increasing",
-                "magnitude": "12% year-over-year growth",
-                "period": "Q4 2024",
+                "company": "Acme Corp",
+                "ticker": "ACME",
+                "trends": [
+                    {
+                        "metric": "Revenue",
+                        "direction": "increasing",
+                        "direction_strength": "moderate",
+                        "change_rate": "+12% YoY",
+                        "time_horizon": "medium",
+                        "period": "Q4 2024",
+                        "note": "Consistent growth over 3 quarters",
+                    }
+                ],
+                "anomalies": [],
             }
         ],
-        "anomalies": [],
-        "outlook": "Continued growth expected based on current trajectory.",
+        "macro_trends": [],
+        "cross_company_comparison": None,
+        "outlook": {
+            "short_term": "Continued growth expected",
+            "medium_term": "Stable with margin expansion potential",
+            "key_risks": ["Rising costs", "Market volatility"],
+        },
         "confidence": "medium",
     }
 
 
 @pytest.fixture
 def sample_sentiment_data():
+    """Matches current sentiment prompt schema."""
     return {
         "overall_sentiment": "bullish",
-        "confidence": "medium",
-        "positive_signals": ["Strong earnings beat", "New product launch"],
-        "negative_signals": ["Rising costs"],
-        "risk_factors": ["Market volatility"],
-        "forward_guidance": "Management raised full-year guidance.",
-        "summary": "Generally positive outlook with some cost concerns.",
+        "confidence": 0.75,
+        "company_sentiment": [
+            {
+                "company": "Acme Corp",
+                "ticker": "ACME",
+                "sentiment": "bullish",
+                "confidence": 0.75,
+                "key_drivers": ["Strong earnings beat", "New product launch"],
+            }
+        ],
+        "positive_signals": [
+            {"signal": "Revenue beat expectations", "source": "Q4 earnings report", "confidence": 0.8}
+        ],
+        "negative_signals": [
+            {"signal": "Rising raw material costs", "source": "Management commentary", "confidence": 0.6}
+        ],
+        "forward_guidance": {
+            "management": "Raised full-year guidance",
+            "analyst_signals": None,
+            "macro_outlook": None,
+        },
+        "geographic_note": None,
+        "summary": "Bullish outlook driven by strong Q4 earnings and product expansion.",
     }
 
 
 @pytest.fixture
 def sample_validation_data():
+    """Matches current validator prompt schema."""
     return {
         "is_consistent": True,
+        "data_quality": "medium",
         "issues": [],
-        "verified_claims": ["Revenue figure matches source", "Growth rate is plausible"],
+        "verified_claims": [
+            {
+                "claim": "Revenue $5.2B matches extractor output",
+                "supported_by": "data_extractor metrics.revenue",
+                "confidence": 0.9,
+            }
+        ],
         "overall_confidence": "medium",
-        "recommendation": "Results appear reliable.",
+        "recommendation": "Results appear reliable with minor data gaps.",
     }
 
 
